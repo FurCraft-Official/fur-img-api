@@ -1,0 +1,30 @@
+name: Build & Deploy to CF Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 1. 生成 list.json
+      - name: Generate list.json
+        run: |
+          find A B -type f  $ -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.webp" -o -iname "*.gif" $ \
+            | sort > list.txt
+          jq -R -s -c 'split("\n")[:-1]' list.txt > list.json
+
+      # 2. 部署到 Cloudflare Pages
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: fur-img-api        # Pages 项目名
+          directory: .                    # 整个仓库推送
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
